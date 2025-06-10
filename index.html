@@ -3,49 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stats Viewer</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
+  <title>Chess.com Analyzer</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      transition: background 0.3s, color 0.3s;
-    }
-    .light {
-      background: linear-gradient(to bottom, #ffe4e1, white);
-      color: black;
-    }
-    .dark {
-      background: linear-gradient(to bottom, #1f1f1f, #000);
-      color: white;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-    }
-    .toggle {
-      cursor: pointer;
-    }
-    .chart-container {
-      padding: 1rem;
-    }
-  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="dark">
-  <div class="header">
-    <h1>Stats Viewer</h1>
-    <label class="toggle">
-      <input type="checkbox" id="theme-toggle" checked /> Dark Mode
-    </label>
+<body class="bg-gray-900 text-white">
+  <div class="p-6 max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">Chess.com Profile Analyzer</h1>
+    <form id="searchForm" class="mb-6">
+      <input id="usernameInput" type="text" placeholder="Enter Chess.com Username" class="text-black px-4 py-2 rounded">
+      <button type="submit" class="bg-pink-500 px-4 py-2 rounded ml-2">Search</button>
+    </form>
+
+    <div class="mb-4">
+      <label><input type="radio" name="timeRange" value="7"> Week</label>
+      <label class="ml-4"><input type="radio" name="timeRange" value="90" checked> 3 Months</label>
+      <label class="ml-4"><input type="radio" name="timeRange" value="365"> 1 Year</label>
+      <label class="ml-4"><input type="radio" name="timeRange" value="0"> All Time</label>
+    </div>
+
+    <section id="profileSection" class="hidden mb-6">
+      <img id="avatar" class="w-20 h-20 rounded-full" />
+      <h2 id="profileUsername" class="text-2xl font-bold mt-2"></h2>
+      <p><strong>Followers:</strong> <span id="followers"></span></p>
+      <p><strong>Country:</strong> <span id="country"></span></p>
+      <p><strong>Status:</strong> <span id="status"></span></p>
+      <p><strong>League:</strong> <span id="league"></span></p>
+    </section>
+
+    <section id="statsSection" class="hidden mb-6">
+      <h2 class="text-xl font-semibold mb-2">Stats</h2>
+      <div id="statsContent" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+    <section id="openingsSection" class="hidden mb-6">
+      <h2 class="text-xl font-semibold mb-2">Top 20 Openings</h2>
+      <table class="table-auto w-full text-left">
+        <thead>
+          <tr>
+            <th class="px-4 py-2">Opening</th>
+            <th class="px-4 py-2">Play Rate</th>
+            <th class="px-4 py-2">Win Rate</th>
+            <th class="px-4 py-2">Loss Rate</th>
+            <th class="px-4 py-2">Draw Rate</th>
+          </tr>
+        </thead>
+        <tbody id="openingsTableBody"></tbody>
+      </table>
+    </section>
+
+    <section id="chartsSection" class="hidden mb-6">
+      <h2 class="text-xl font-semibold mb-2">Charts</h2>
+      <canvas id="winRateChart" class="mb-6"></canvas>
+      <canvas id="timeFormatChart" class="mb-6"></canvas>
+      <canvas id="openingWinRateChart" class="mb-6"></canvas>
+
+      <h3 class="text-xl font-semibold mb-2">Rating History</h3>
+      <canvas id="ratingHistoryChart" class="mb-6"></canvas>
+
+      <h3 class="text-xl font-semibold mb-2">Top 5 Opponents</h3>
+      <ul id="leaderboard" class="list-disc pl-6 text-lg"></ul>
+    </section>
+
+    <section id="loadingSection" class="hidden">Loading...</section>
+    <section id="errorSection" class="hidden text-red-500">An error occurred. Please try again.</section>
   </div>
-  <div class="chart-container">
-    <h2>Opening Performance</h2>
-    <canvas id="openingChart"></canvas>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0-beta.1/dist/chess.min.js"></script>
+
   <script src="script.js"></script>
 </body>
 </html>
