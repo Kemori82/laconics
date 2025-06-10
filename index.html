@@ -1,285 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script type="text/javascript">
-  // This is a CodeSandbox injection script that's used to
-  // add navigation and inspector functionality to the preview
-  (function () {
-    var script = document.createElement("script");
-    script.src = "https://codesandbox.io/p/preview-protocol.js";
-    script.defer = true;
-    script.async = true;
-    (document.body || document.documentElement).appendChild(script);
-  })();
-
-  const isIFramePreview = window.top !== window.self;
-
-  // Only run this script in editor context
-  if (isIFramePreview) {
-    // This script is used to enable Chrome DevTools functionality
-    (function () {
-      var script = document.createElement("script");
-      script.src =
-        "https://codesandbox.io/p/chrome-devtool/protocol/index.js";
-
-      script.onload = () => {
-        const devtoolProtocol = window.chobitsu;
-        if (devtoolProtocol) {
-          window.addEventListener("message", (event) => {
-            const { type, data } = event.data;
-
-            if (type === "FROM_DEVTOOL") {
-              devtoolProtocol.sendRawMessage(data);
-            }
-          });
-
-          devtoolProtocol.setOnMessage((data) => {
-            if (data.includes('"id":"tmp')) {
-              return;
-            }
-
-            window.parent.postMessage({ type: "TO_DEVTOOL", data }, "*");
-          });
-
-          devtoolProtocol.sendRawMessage(
-            `{"id":5,"method":"Runtime.enable","params":{}}`
-          );
-        }        
-      }
-
-      (document.head || document.documentElement).prepend(script);
-    })();
-  }
-
-  if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ === "undefined") {
-    let nextID = 0;
-    let hook = (__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
-      renderers: new Map(),
-      supportsFiber: true,
-      inject: (renderer) => {
-        const id = nextID++;
-        hook.renderers.set(id, renderer);
-        return id;
-      },
-      onScheduleFiberRoot() {},
-      onCommitFiberRoot() {},
-      onCommitFiberUnmount() {},
-    });
-  }
-
-  document.currentScript.remove();
-</script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stats Viewer</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0-beta.1/chess.min.js"></script>
   <style>
     body {
-      font-family: 'Inter', sans-serif;
-      transition: background 0.5s ease, color 0.5s ease;
+      margin: 0;
+      font-family: sans-serif;
+      transition: background 0.3s, color 0.3s;
     }
-    body.light {
-      background: linear-gradient(to bottom, #ffe4e6, #ffffff);
-      color: #000000;
+    .light {
+      background: linear-gradient(to bottom, #ffe4e1, white);
+      color: black;
     }
-    body.dark {
-      background: linear-gradient(to bottom, #1f2937, #000000);
-      color: #ffffff;
+    .dark {
+      background: linear-gradient(to bottom, #1f1f1f, #000);
+      color: white;
     }
-    /* Override text color for elements that need solid color */
-    .solid-text {
-      color: inherit !important;
-      background: none !important;
-      -webkit-background-clip: unset !important;
-      background-clip: unset !important;
-    }
-    /* Tabs styles */
-    .tabs {
+    .header {
       display: flex;
-      border-bottom: 2px solid #fbcfe8; /* light pink */
-      margin-bottom: 1rem;
-    }
-    .tab {
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: border-color 0.3s;
-      font-weight: 600;
-      color: #fbcfe8; /* light pink */
-    }
-    .tab.active {
-      border-color: #ec4899;
-      color: #ec4899;
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-    /* Data cards gradient background */
-    .data-card {
-      border-radius: 0.5rem;
+      justify-content: space-between;
+      align-items: center;
       padding: 1rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      transition: background 0.5s ease, color 0.5s ease;
     }
-    body.light .data-card {
-      background: linear-gradient(to bottom, #ffe4e6, #ffffff);
-      color: #000000;
+    .toggle {
+      cursor: pointer;
     }
-    body.dark .data-card {
-      background: linear-gradient(to bottom, #ec4899, #fce7f3);
-      color: #1f2937;
-    }
-    /* Table text color */
-    #openingsTableBody tr td {
-      color: inherit;
+    .chart-container {
+      padding: 1rem;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-4">
-  <header class="w-full max-w-4xl mb-6 flex justify-between items-center solid-text">
-    <h1 class="text-3xl font-semibold text-center flex-grow">Stats Viewer</h1>
-  </header>
-
-  <form id="searchForm" class="w-full max-w-4xl flex justify-center gap-2 mb-6 solid-text">
-    <input
-      id="usernameInput"
-      type="text"
-      placeholder="Enter username"
-      class="px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
-      value="redofhealer"
-      required
-    />
-    <button
-      type="submit"
-      class="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 transition"
-    >
-      Search
-    </button>
-  </form>
-
-  <main class="w-full max-w-4xl bg-gray-900 rounded shadow p-6 space-y-6 solid-text">
-    <div class="tabs" role="tablist">
-      <button class="tab active" role="tab" aria-selected="true" aria-controls="tabProfile" id="tabProfileBtn">Profile & Stats</button>
-      <button class="tab" role="tab" aria-selected="false" aria-controls="tabOpenings" id="tabOpeningsBtn">Openings</button>
-      <button class="tab" role="tab" aria-selected="false" aria-controls="tabCharts" id="tabChartsBtn">Visualizations</button>
-    </div>
-
-    <section id="tabProfile" class="tab-content active" role="tabpanel" aria-labelledby="tabProfileBtn">
-      <section id="profileSection" class="hidden">
-        <h2 class="text-xl font-semibold mb-2">Profile Info</h2>
-        <div class="flex items-center gap-4">
-          <img id="avatar" alt="User Avatar" class="w-20 h-20 rounded-full" />
-          <div>
-            <p><strong>Username:</strong> <span id="profileUsername"></span></p>
-            <p><strong>Followers:</strong> <span id="followers"></span></p>
-            <p><strong>Country:</strong> <span id="country"></span></p>
-            <p><strong>Status:</strong> <span id="status"></span></p>
-            <p><strong>League:</strong> <span id="league"></span></p>
-          </div>
-        </div>
-      </section>
-
-      <section id="statsSection" class="hidden mt-6">
-        <h2 class="text-xl font-semibold mb-2">Stats</h2>
-        <div id="statsContent" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Stats cards will be inserted here -->
-        </div>
-      </section>
-    </section>
-
-    <section id="tabOpenings" class="tab-content" role="tabpanel" aria-labelledby="tabOpeningsBtn">
-      <section id="openingsSection" class="hidden">
-        <h2 class="text-xl font-semibold mb-2">Most Used Openings</h2>
-        <div id="openingsContent" class="overflow-x-auto">
-          <table class="min-w-full border border-gray-700 rounded text-sm text-left text-white">
-            <thead class="bg-pink-100">
-              <tr>
-                <th class="px-4 py-2 border-b border-gray-700">ECO Code</th>
-                <th class="px-4 py-2 border-b border-gray-700">Play Rate</th>
-                <th class="px-4 py-2 border-b border-gray-700">Win Rate</th>
-                <th class="px-4 py-2 border-b border-gray-700">Loss Rate</th>
-                <th class="px-4 py-2 border-b border-gray-700">Draw Rate</th>
-              </tr>
-            </thead>
-            <tbody id="openingsTableBody" class="bg-gray-900">
-              <!-- Opening rows will be inserted here -->
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </section>
-
-    <section id="tabCharts" class="tab-content" role="tabpanel" aria-labelledby="tabChartsBtn">
-      <section id="chartsSection" class="hidden">
-        <h2 class="text-xl font-semibold mb-2">Visualizations</h2>
-        <canvas id="winRateChart" class="mb-6"></canvas>
-        <canvas id="timeFormatChart" class="mb-6"></canvas>
-        <canvas id="openingWinRateChart" class="mb-6"></canvas>
-      </section>
-    </section>
-
-    <section id="loadingSection" class="hidden text-center text-pink-300">
-      Loading data...
-    </section>
-
-    <section id="errorSection" class="hidden text-center text-pink-400 font-semibold">
-      Error loading data. Please try again.
-    </section>
-  </main>
-
+<body class="dark">
+  <div class="header">
+    <h1>Stats Viewer</h1>
+    <label class="toggle">
+      <input type="checkbox" id="theme-toggle" checked /> Dark Mode
+    </label>
+  </div>
+  <div class="chart-container">
+    <h2>Opening Performance</h2>
+    <canvas id="openingChart"></canvas>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0-beta.1/dist/chess.min.js"></script>
   <script src="script.js"></script>
-  <script>
-    const toggleThemeBtn = document.getElementById('toggleThemeBtn');
-    const themeIcon = document.getElementById('themeIcon');
-    const body = document.body;
-
-    toggleThemeBtn.addEventListener('click', () => {
-      if (body.classList.contains('light')) {
-        body.classList.remove('light');
-        body.classList.add('dark');
-        themeIcon.classList.remove('fa-sun');
-        themeIcon.classList.add('fa-moon');
-        themeIcon.style.color = '#9ca3af'; // gray for dark mode icon
-      } else {
-        body.classList.remove('dark');
-        body.classList.add('light');
-        themeIcon.classList.remove('fa-moon');
-        themeIcon.classList.add('fa-sun');
-        themeIcon.style.color = '#ec4899'; // pink for light mode icon
-      }
-    });
-
-    // Tabs functionality
-    const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        const target = tab.getAttribute('aria-controls');
-
-        tabs.forEach(t => {
-          t.classList.remove('active');
-          t.setAttribute('aria-selected', 'false');
-        });
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-
-        tabContents.forEach(tc => {
-          if (tc.id === target) {
-            tc.classList.add('active');
-          } else {
-            tc.classList.remove('active');
-          }
-        });
-      });
-    });
-  </script>
 </body>
 </html>
