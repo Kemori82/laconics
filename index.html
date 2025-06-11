@@ -1,240 +1,480 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Stats Viewer</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Stats Veiwer</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0-beta.1/chess.min.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <style>
+    /* CSS Variables and styles (same as previous full version) */
+    :root {
+      --pink-light: #f9c0d9;
+      --dark-gray: #333333;
+      --light-pink: #ffb6c1;
+      --font-family: 'Inter', sans-serif;
+
+      --bg-gradient-dark-top: #2f2f2f;
+      --bg-gradient-dark-bottom: #000000;
+      --text-dark: var(--pink-light);
+
+      --bg-gradient-light-top: #ffb6c1;
+      --bg-gradient-light-bottom: #ffffff;
+      --text-light: var(--dark-gray);
+
+      --accent-purple: #8b5cf6;
+
+      --border-color-dark: rgba(255 182 193 / 0.4);
+      --border-color-light: rgba(51 51 51 / 0.15);
+    }
+
     body {
-      font-family: 'Inter', sans-serif;
-      transition: background 0.5s ease, color 0.5s ease;
-    }
-    body.light {
-      background: linear-gradient(to bottom, #fbcfe8, #ffffff);
-      color: #000000;
-    }
-    body.dark {
-      background: linear-gradient(to bottom, #1f2937, #000000);
-      color: #ffffff;
-    }
-    /* Override text color for elements that need solid color */
-    .solid-text {
-      color: inherit !important;
-      background: none !important;
-      -webkit-background-clip: unset !important;
-      background-clip: unset !important;
-    }
-    /* Tabs styles */
-    .tabs {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-family);
+      background: linear-gradient(180deg, var(--bg-gradient-dark-top), var(--bg-gradient-dark-bottom));
+      color: var(--text-dark);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       display: flex;
-      border-bottom: 2px solid #fbcfe8; /* light pink */
-      margin-bottom: 1rem;
+      flex-direction: column;
+      transition: background 0.4s ease, color 0.4s ease;
     }
-    .tab {
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: border-color 0.3s;
+    body.light-theme {
+      background: linear-gradient(180deg, var(--bg-gradient-light-top), var(--bg-gradient-light-bottom));
+      color: var(--text-light);
+    }
+    h1, h2, h3, h4, h5, h6 {
       font-weight: 600;
-      color: #fbcfe8; /* light pink */
+      margin: 0 0 12px 0;
+      line-height: 1.2;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: saturate(180%) blur(10px);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s ease;
+    }
+    body.light-theme header {
+      border-color: var(--border-color-light);
+    }
+    body:not(.light-theme) header {
+      border-color: var(--border-color-dark);
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
       user-select: none;
-    }
-    .tab.active {
-      border-color: #ec4899;
-      color: #ec4899;
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-    /* Data cards gradient background */
-    .data-card {
-      border-radius: 0.5rem;
-      padding: 1rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      transition: background 0.5s ease, color 0.5s ease;
-    }
-    body.light .data-card {
-      background: linear-gradient(to bottom, #ffe4e6, #ffffff);
-      color: #000000;
-    }
-    body.dark .data-card {
-      background: linear-gradient(to bottom, #ec4899, #fce7f3);
-      color: #1f2937;
-    }
-    /* Table text color */
-    #openingsTableBody tr td {
       color: inherit;
     }
-    /* Header styles */
-    header {
-      position: relative;
-    }
-    /* Toggle button styles */
-    #toggleThemeBtn {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
+    .theme-toggle {
       background: transparent;
       border: none;
       cursor: pointer;
-      font-size: 1.5rem;
+      font-size: 24px;
       color: inherit;
-      transition: color 0.3s ease;
+      padding: 8px;
+      border-radius: 6px;
+      transition: background-color 0.2s ease;
+    }
+    .theme-toggle:hover,
+    .theme-toggle:focus {
+      background-color: rgba(255 182 193 / 0.2);
+      outline: none;
+    }
+    body.light-theme .theme-toggle:hover,
+    body.light-theme .theme-toggle:focus {
+      background-color: rgba(51 51 51 / 0.1);
+    }
+    main {
+      flex-grow: 1;
+      max-width: 960px;
+      width: 94%;
+      margin: 40px auto;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .search-container input[type="text"] {
+      flex-grow: 1;
+      min-width: 220px;
+      font-size: 1rem;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background-color: rgba(255 182 193 / 0.2);
+      color: inherit;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    body.light-theme .search-container input[type="text"] {
+      background-color: rgba(255 182 193 / 0.15);
+      border-color: rgba(51 51 51 / 0.25);
+      color: var(--text-light);
+    }
+    .search-container input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+      background-color: rgba(139 92 246 / 0.2);
+      color: inherit;
+    }
+    body.light-theme .search-container input[type="text"]:focus {
+      background-color: rgba(139 92 246 / 0.12);
+    }
+    .search-container button {
+      background-color: var(--accent-purple);
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 12px 24px;
+      font-size: 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.3s ease;
+    }
+    .search-container button:hover,
+    .search-container button:focus {
+      background-color: #7c44e2;
+      outline: none;
+    }
+    .hidden {
+      display: none;
+    }
+    .result {
+      background: rgba(255 182 193 / 0.1);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(139 92 246 / 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      color: inherit;
+      min-height: 160px;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      white-space: normal;
+      word-break: break-word;
+    }
+    body.light-theme .result {
+      background: rgba(255 182 193 / 0.12);
+      box-shadow: 0 4px 12px rgba(140 100 150 / 0.15);
+    }
+    .player-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .player-name {
+      font-size: 1.75rem;
+      font-weight: 700;
+      user-select: text;
+      word-break: break-word;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(140px,1fr));
+      gap: 24px;
+      margin-top: 12px;
+    }
+    .stat-card {
+      background-color: rgba(139 92 246 / 0.2);
+      border-radius: 16px;
+      padding: 14px 20px;
+      text-align: left;
       user-select: none;
+      transition: background-color 0.3s ease;
+      white-space: normal;
+      word-break: break-word;
+    }
+    body.light-theme .stat-card {
+      background-color: rgba(139 92 246 / 0.1);
+    }
+    .stat-label {
+      font-weight: 600;
+      color: var(--pink-light);
+      display: block;
+      margin-bottom: 6px;
+    }
+    body.light-theme .stat-label {
+      color: var(--accent-purple);
+    }
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: inherit;
+      white-space: normal;
+    }
+    .openings-section {
+      margin-top: 24px;
+    }
+    .openings-title {
+      font-weight: 700;
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+      user-select: none;
+    }
+    .openings-list {
+      list-style: none;
+      padding-left: 0;
+      max-height: 300px;
+      overflow-y: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(139 92 246 / 0.2);
+      background-color: rgba(139 92 246 / 0.05);
+      white-space: normal;
+    }
+    body.light-theme .openings-list {
+      border-color: rgba(139 92 246 / 0.1);
+      background-color: rgba(139 92 246 / 0.06);
+    }
+    .openings-list li {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(139 92 246 / 0.1);
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.95rem;
+      cursor: default;
+      user-select: text;
+      flex-wrap: wrap;
+    }
+    .openings-list li:last-child {
+      border-bottom: none;
+    }
+    body.light-theme .openings-list li {
+      border-color: rgba(139 92 246 / 0.15);
+    }
+    .opening-name {
+      font-weight: 600;
+      max-width: 60%;
+      overflow-wrap: break-word;
+      color: inherit;
+      white-space: normal;
+    }
+    .opening-stats {
+      color: var(--pink-light);
+      font-weight: 600;
+      min-width: 40px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    body.light-theme .opening-stats {
+      color: var(--accent-purple);
+    }
+    .error-message {
+      background-color: rgba(255 0 0 / 0.15);
+      color: #ff4f4f;
+      padding: 16px 24px;
+      border-radius: 20px;
+      user-select: none;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1.1rem;
+      box-shadow: 0 2px 8px rgba(255 0 0 / 0.2);
+    }
+    .spinner {
+      border: 4px solid rgba(139 92 246 / 0.3);
+      border-top: 4px solid var(--accent-purple);
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      animation: spin 0.9s linear infinite;
+      margin: 16px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+    @media (max-width: 480px) {
+      main {
+        width: 94%;
+        margin: 32px auto;
+      }
+      .search-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .search-container button {
+        width: 100%;
+        justify-content: center;
+        font-size: 1.1rem;
+      }
+      .stat-card {
+        padding: 16px 24px;
+      }
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-4 light">
-  <header class="w-full max-w-4xl mb-6 flex justify-center items-center solid-text relative">
-    <h1 class="text-3xl font-semibold text-center flex-grow">Stats Viewer</h1>
-    <button id="toggleThemeBtn" aria-label="Toggle light/dark mode" title="Toggle light/dark mode" type="button">
-      <i id="themeIcon" class="fas fa-moon"></i>
+<body>
+  <header>
+    <div class="logo" aria-label="Chess.com Player Analyzer">Stats Veiwer</div>
+    <button id="themeToggle" class="theme-toggle" aria-label="Toggle Light/Dark Theme" title="Toggle Light/Dark Theme" type="button">
+      <span class="material-icons" aria-hidden="true">dark_mode</span>
     </button>
   </header>
+  <main>
+    <form id="searchForm" class="search-container" role="search" aria-label="Search Chess.com Player">
+      <input
+        type="text"
+        id="playerInput"
+        placeholder="Enter Chess.com username"
+        aria-label="Chess.com username"
+        autocomplete="off"
+        required
+        minlength="2"
+        maxlength="30"
+        spellcheck="false"
+      />
+      <button type="submit" aria-label="Search Player Stats">
+        <span class="material-icons" aria-hidden="true">search</span>
+        Analyze
+      </button>
+    </form>
 
-  <form id="searchForm" class="w-full max-w-4xl flex justify-center gap-2 mb-6 solid-text">
-    <input
-      id="usernameInput"
-      type="text"
-      placeholder="Enter username"
-      class="px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
-      value=""
-      required
-    />
-    <button
-      type="submit"
-      class="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 transition"
-    >
-      Search
-    </button>
-  </form>
-
-  <main class="w-full max-w-4xl bg-gray-900 rounded shadow p-6 space-y-6 solid-text">
-    <div class="tabs" role="tablist">
-      <button class="tab active" role="tab" aria-selected="true" aria-controls="tabProfile" id="tabProfileBtn" type="button">Profile & Stats</button>
-      <button class="tab" role="tab" aria-selected="false" aria-controls="tabOpenings" id="tabOpeningsBtn" type="button">Openings</button>
-      <button class="tab" role="tab" aria-selected="false" aria-controls="tabCharts" id="tabChartsBtn" type="button">Visualizations</button>
-    </div>
-
-    <section id="tabProfile" class="tab-content active" role="tabpanel" aria-labelledby="tabProfileBtn">
-      <section id="profileSection" class="hidden">
-        <h2 class="text-xl font-semibold mb-2">Profile Info</h2>
-        <div class="flex items-center gap-4">
-          <img id="avatar" alt="User Avatar" class="w-20 h-20 rounded-full" />
-          <div>
-            <p><strong>Username:</strong> <span id="profileUsername"></span></p>
-            <p><strong>Followers:</strong> <span id="followers"></span></p>
-            <p><strong>Country:</strong> <span id="country"></span></p>
-            <p><strong>Status:</strong> <span id="status"></span></p>
-            <p><strong>League:</strong> <span id="league"></span></p>
-          </div>
-        </div>
-      </section>
-
-      <section id="statsSection" class="hidden mt-6">
-        <h2 class="text-xl font-semibold mb-2">Stats</h2>
-        <div id="statsContent" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Stats cards will be inserted here -->
-        </div>
-      </section>
-    </section>
-
-    <section id="tabOpenings" class="tab-content" role="tabpanel" aria-labelledby="tabOpeningsBtn">
-      <section id="openingsSection" class="hidden">
-        <h2 class="text-xl font-semibold mb-2">Most Used Openings</h2>
-        <div id="openingsContent" class="overflow-x-auto">
-          <table class="min-w-full border border-gray-700 rounded text-sm text-left text-white">
-            <thead class="bg-pink-100">
-              <tr>
-                <th class="px-4 py-2 border-b border-gray-700">ECO Code</th>
-                <th class="px-4 py-2 border-b border-gray-700">Play Rate</th>
-                <th class="px-4 py-2 border-b border-gray-700">Win Rate</th>
-                <th class="px-4 py-2 border-b border-gray-700">Loss Rate</th>
-                <th class="px-4 py-2 border-b border-gray-700">Draw Rate</th>
-                <th class="px-4 py-2 border-b border-gray-700">White Win Rate</th>
-                <th class="px-4 py-2 border-b border-gray-700">Black Win Rate</th>
-              </tr>
-            </thead>
-            <tbody id="openingsTableBody" class="bg-gray-900">
-              <!-- Opening rows will be inserted here -->
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </section>
-
-    <section id="tabCharts" class="tab-content" role="tabpanel" aria-labelledby="tabChartsBtn">
-      <section id="chartsSection" class="hidden">
-        <h2 class="text-xl font-semibold mb-2">Visualizations</h2>
-        <canvas id="winRateChart" class="mb-6"></canvas>
-        <canvas id="timeFormatChart" class="mb-6"></canvas>
-        <canvas id="openingWinRateChart" class="mb-6"></canvas>
-      </section>
-    </section>
-
-    <section id="loadingSection" class="hidden text-center text-pink-300">
-      Loading data...
-    </section>
-
-    <section id="errorSection" class="hidden text-center text-pink-400 font-semibold">
-      Error loading data. Please try again.
+    <section id="result" class="result" aria-live="polite" aria-atomic="true" aria-relevant="additions">
+      <!-- Player stats and openings will appear here -->
     </section>
   </main>
 
-  <script src="script.js"></script>
   <script>
-    const toggleThemeBtn = document.getElementById('toggleThemeBtn');
-    const themeIcon = document.getElementById('themeIcon');
-    const body = document.body;
+    (() => {
+      const themeToggleBtn = document.getElementById('themeToggle');
+      const body = document.body;
+      const localStorageKey = 'chessPlayerAnalyzerTheme';
 
-    toggleThemeBtn.addEventListener('click', () => {
-      if (body.classList.contains('light')) {
-        body.classList.remove('light');
-        body.classList.add('dark');
-        themeIcon.classList.remove('fa-moon');
-        themeIcon.classList.add('fa-sun');
-        themeIcon.style.color = '#9ca3af'; // gray for dark mode icon
-      } else {
-        body.classList.remove('dark');
-        body.classList.add('light');
-        themeIcon.classList.remove('fa-sun');
-        themeIcon.classList.add('fa-moon');
-        themeIcon.style.color = '#ec4899'; // pink for light mode icon
+      function initTheme() {
+        const savedTheme = localStorage.getItem(localStorageKey);
+        if (savedTheme === 'light') {
+          body.classList.add('light-theme');
+          updateToggleIcon(true);
+        } else {
+          body.classList.remove('light-theme');
+          updateToggleIcon(false);
+        }
       }
-    });
 
-    // Tabs functionality
-    const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
+      function updateToggleIcon(isLight) {
+        const icon = themeToggleBtn.querySelector('.material-icons');
+        icon.textContent = isLight ? 'light_mode' : 'dark_mode';
+      }
 
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        const target = tab.getAttribute('aria-controls');
-
-        tabs.forEach(t => {
-          t.classList.remove('active');
-          t.setAttribute('aria-selected', 'false');
-        });
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-
-        tabContents.forEach(tc => {
-          if (tc.id === target) {
-            tc.classList.add('active');
-          } else {
-            tc.classList.remove('active');
-          }
-        });
+      themeToggleBtn.addEventListener('click', () => {
+        const isLight = body.classList.toggle('light-theme');
+        localStorage.setItem(localStorageKey, isLight ? 'light' : 'dark');
+        updateToggleIcon(isLight);
       });
-    });
+
+      initTheme();
+
+      const searchForm = document.getElementById('searchForm');
+      const playerInput = document.getElementById('playerInput');
+      const resultSection = document.getElementById('result');
+
+      function clearResult() {
+        resultSection.innerHTML = '';
+      }
+
+      function showLoading() {
+        resultSection.innerHTML = '<div class="spinner" role="status" aria-label="Loading"></div>';
+      }
+
+      function showError(message) {
+        resultSection.innerHTML = `<div class="error-message" role="alert">${message}</div>`;
+      }
+
+      function numberWithCommas(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      }
+
+      function calcWinPercent(wins, total) {
+        if (total === 0) return '0.0';
+        return ((wins / total) * 100).toFixed(1);
+      }
+
+      async function fetchStats(username) {
+        const res = await fetch(`https://api.chess.com/pub/player/${username}/stats`);
+        if (!res.ok) throw new Error('Failed to fetch stats');
+        return res.json();
+      }
+
+      function renderStats(stats) {
+        const entries = Object.entries(stats);
+        let totalWins = 0;
+        let totalLosses = 0;
+        let totalDraws = 0;
+
+        const statCards = entries.filter(([key, value]) => value.record).map(([key, value]) => {
+          const wins = value.record.win || 0;
+          const losses = value.record.loss || 0;
+          const draws = value.record.draw || 0;
+          const total = wins + losses + draws;
+          totalWins += wins;
+          totalLosses += losses;
+          totalDraws += draws;
+          const label = key.replace(/^chess_/, '').replace(/_/g, ' ');
+          return `
+            <div class="stat-card">
+              <span class="stat-label">${label}</span>
+              <span class="stat-value">Games: ${total.toLocaleString()}</span><br />
+              <span class="stat-value">Wins: ${wins.toLocaleString()}</span><br />
+              <span class="stat-value">Losses: ${losses.toLocaleString()}</span><br />
+              <span class="stat-value">Draws: ${draws.toLocaleString()}</span>
+            </div>
+          `;
+        }).join('');
+
+        const overallTotal = totalWins + totalLosses + totalDraws;
+        const overallHtml = `
+          <div class="stat-card">
+            <span class="stat-label">Overall Games</span>
+            <span class="stat-value">${overallTotal.toLocaleString()}</span><br />
+            <span class="stat-label">Overall Wins</span>
+            <span class="stat-value">${totalWins.toLocaleString()}</span><br />
+            <span class="stat-label">Overall Losses</span>
+            <span class="stat-value">${totalLosses.toLocaleString()}</span><br />
+            <span class="stat-label">Overall Draws</span>
+            <span class="stat-value">${totalDraws.toLocaleString()}</span>
+          </div>
+        `;
+
+        return `
+          <h2>Statistics</h2>
+          <div class="stats-grid">
+            ${overallHtml}
+            ${statCards}
+          </div>
+        `;
+      }
+
+      searchForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = playerInput.value.trim().toLowerCase();
+        if (!username) return;
+        clearResult();
+        showLoading();
+        try {
+          const stats = await fetchStats(username);
+          const html = renderStats(stats);
+          resultSection.innerHTML = html;
+        } catch (err) {
+          showError(`Failed to fetch stats: ${err.message}`);
+        }
+      });
+    })();
   </script>
 </body>
 </html>
