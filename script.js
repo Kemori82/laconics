@@ -332,5 +332,5 @@
       showLoading(false);
     }
   });
-})()
+})();
 
